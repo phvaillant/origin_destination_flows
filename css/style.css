@@ -1,0 +1,41 @@
+html, body, #map_canvas, #right_panel, .container-fluid {
+	height: 100%;
+	padding: 0px;
+}
+
+#title {
+	height: 35%;
+	overflow-y: scroll;
+}
+
+#filter_pane {
+	height: 20%;
+	overflow-y: scroll;
+}
+
+.list-group-item {
+	padding-top: 0px;
+	padding-bottom: 0px;
+	border: none;
+}
+
+label {
+	margin-left: 5px;
+}
+
+#info_pane {
+	height: 15%;
+	overflow-y: scroll;
+}
+
+#barchart {
+	height: 30%;
+}
+
+.tract_cell {
+  fill: #FF9933;
+  fill-opacity: .1;
+  stroke: #FF9933;
+  stroke-width: 1.5px;
+  pointer-events:all;
+}
