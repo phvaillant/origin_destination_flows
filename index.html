@@ -51,7 +51,7 @@
                   </ul>
         </div>
 
-        <div class="col-md-6" id="purpose_filter">
+        <div class="col-md-6" id="mode_filter">
                   <h4>Filter by purpose of trip:</h4>
                   <ul class="list-group row">
                      <li class="list-group-item col-xs-6"><input type="checkbox" value=1 checked><label>Drive</label></li>
@@ -66,19 +66,15 @@
 
       <div class="col-md-12" id="info_pane">
         <h4>Tract Information</h4>
-        <div class="col-md-6" id="geo_id">
-          <div class="compared_tract"></div>
-          <div class="other_tract"></div>
-        </div>
-
-        <div class="col-md-6" id="geo_details">
-          <div class="compared_tract"></div>
-          <div class="other_tract"></div>
-        </div>
+        <div class="col-md-6" id="tooltip_1_id" class="tooltip"></div>
+        <div class="col-md-6" id="tooltip_1_detail" class="tooltip"></div>
+        <div class="col-md-6" id="tooltip_2_id" class="tooltip"></div>
+        <div class="col-md-6" id="tooltip_2_detail" class="tooltip"></div>
       </div>
 
-      <div class="col-md-12" id="barchart">
+      <div class="col-md-12" id="barchart_pane">
           <h4>Distribution of trips by hour of day:</h4>
+          <div id="barchart"></div>
       </div>
 
     </div>
