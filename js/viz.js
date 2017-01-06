@@ -2,8 +2,12 @@
 var mode = Array.apply(0, Array(5)).map(function (x, y) { return y + 1; });
 var purpose = Array.apply(0, Array(4)).map(function (x, y) { return y + 1; });
 var hour = Array.apply(0, Array(24)).map(function (x, y) { return y; });
+var geoid_filter;
 
 $(document).ready(function(){
+
+  //make sure everything is checked when refresh
+  d3.selectAll('input').property('checked', true);
 
   //declare map
   map = new L.Map('map_canvas', {zoomControl:true});
@@ -29,8 +33,8 @@ $(document).ready(function(){
   map.setView(new L.LatLng(47.619, -122.332),11);
   map.addLayer(here);
 
-  var svg = d3.select(map.getPanes().overlayPane).append("svg"),
-      g = svg.append("g").attr("class", "leaflet-zoom-hide");
+  var svg_map = d3.select(map.getPanes().overlayPane).append("svg"),
+      g_map = svg_map.append("g").attr("class", "leaflet-zoom-hide");
 
   d3.queue()
     .defer(d3.json, "tracts_seattle_v2.json")
@@ -46,7 +50,7 @@ $(document).ready(function(){
     var transform = d3.geoTransform({point: projectPoint}),
           path = d3.geoPath().projection(transform);
 
-    var mapFeatures = g.append('g')
+    var mapFeatures = g_map.append('g')
               .attr('class', 'features');
 
     //map by tarct id
@@ -125,57 +129,6 @@ $(document).ready(function(){
     var tract_clicked = 0;
     var second_tooltip = false;
 
-    //add info on mouseover
-    d3.selectAll('path')
-      .on('click', function(d) {
-        tracts.selectAll(".tract_clicked").classed("tract_clicked", false);
-        tracts.selectAll(".links_clicked").attr("class","tract_links");
-        if(tract_clicked != d.properties.GEOID10) {
-          d3.select(this).classed("tract_clicked", true);
-          d3.select(this.parentNode).selectAll("g").attr("class","links_clicked");
-          tracts.selectAll(".tract_links").classed("hidden", true);
-          tract_clicked = d.properties.GEOID10;
-          tooltip_id_1.classed('hidden', false)
-                        .html("GEOID: " + d.properties.GEOID10);
-          tooltip_details_1.classed('hidden', false)
-                        .html("Total outgoing trips: " + d.total_trips);
-          second_tooltip = true;
-        }
-        else {
-          tracts.selectAll(".tract_links").classed("hidden", false);
-          tract_clicked = 0;
-          second_tooltip = false;
-          tooltip_id_2.classed('hidden', true);
-          tooltip_details_2.classed('hidden', true);
-        }
-      })
-      .on("mouseover", function(d) {
-                if (second_tooltip) {
-                  tooltip_id_2.classed('hidden', false)
-                        .html("GEOID: " + d.properties.GEOID10);
-                  var outgoing_trips = trips_count.filter(function(a) {return a.key==tract_clicked})[0].values.filter(function(a) {return a.key==d.properties.GEOID10})[0];
-                  outgoing_trips ? outgoing_trips = outgoing_trips.value : outgoing_trips = 0;
-                  tooltip_details_2.classed('hidden', false)
-                        .html("Trips to this tract: " + outgoing_trips);
-                }
-                else {
-                  tooltip_id_1.classed('hidden', false)
-                        .html("GEOID: " + d.properties.GEOID10);
-                  tooltip_details_1.classed('hidden', false)
-                        .html("Total outgoing trips: " + d.total_trips);
-                }
-      })
-      .on('mouseout', function() {
-                if (second_tooltip) {
-                  tooltip_id_2.classed('hidden', true);
-                  tooltip_details_2.classed('hidden', true);
-                }
-                else {
-                  tooltip_id_1.classed('hidden', true);
-                  tooltip_details_1.classed('hidden', true);
-                }
-      });
-
     function projectPoint(x, y) {
           var point = map.latLngToLayerPoint(new L.LatLng(y, x));
           this.stream.point(point.x, point.y);
@@ -192,12 +145,12 @@ $(document).ready(function(){
         topLeft = bounds[0],
         bottomRight = bounds[1];
 
-      svg.attr("width", bottomRight[0] - topLeft[0])
+      svg_map.attr("width", bottomRight[0] - topLeft[0])
           .attr("height", bottomRight[1] - topLeft[1])
           .style("left", topLeft[0] + "px")
           .style("top", topLeft[1] + "px");
 
-      g.attr("transform", "translate(" + -topLeft[0] + "," + -topLeft[1] + ")");
+      g_map.attr("transform", "translate(" + -topLeft[0] + "," + -topLeft[1] + ")");
 
       tracts.selectAll('path').attr("d", path);
       //update position of tracts
@@ -257,6 +210,24 @@ $(document).ready(function(){
                       });
                     });
 
+          //data has changed so refresh the values of the tooltip
+          d3.selectAll('path')
+            .on("mouseover", function(d) {
+                    if (second_tooltip) {
+                      tooltip_id_2.classed('hidden', false)
+                            .html("GEOID: " + d.properties.GEOID10);
+                      var outgoing_trips = trips_count.filter(function(a) {return a.key==tract_clicked})[0].values.filter(function(a) {return a.key==d.properties.GEOID10})[0];
+                      outgoing_trips ? outgoing_trips = outgoing_trips.value : outgoing_trips = 0;
+                      tooltip_details_2.classed('hidden', false)
+                            .html("Trips to this tract: " + outgoing_trips);
+                    }
+                    else {
+                      tooltip_id_1.classed('hidden', false)
+                            .html("GEOID: " + d.properties.GEOID10);
+                      tooltip_details_1.classed('hidden', false)
+                            .html("Total outgoing trips: " + d.total_trips);
+                    }
+            })
 
           var lineScale = d3.scaleLinear()
             .domain([0, max_weight])
@@ -277,6 +248,9 @@ $(document).ready(function(){
                       .attr("stroke","gray")
                       .attr("stroke-width", function(d) {return lineScale(d.weight)});
 
+          //update tooltip value
+          tooltip_details_1.html("Total outgoing trips: " + d3.selectAll(".tract_clicked").datum().total_trips);
+
       } //end of update map function
 
     var margin = {top: 0, right: 15, bottom: 30, left: 45};
@@ -286,6 +260,60 @@ $(document).ready(function(){
     d3.csv('trips_seattle_modified.csv', function(error, data) {
 
         var hours = ["12 AM","1 AM", "2 AM", "3 AM", "4 AM", "5 AM", "6 AM", "7 AM", "8 AM", "9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM", "6 PM", "7 PM", "8 PM", "9 PM", "10 PM", "11 PM"];
+
+        d3.selectAll('path')
+          .on('click', function(d) {
+            tracts.selectAll(".tract_clicked").classed("tract_clicked", false);
+            tracts.selectAll(".links_clicked").attr("class","tract_links");
+            if(tract_clicked != d.properties.GEOID10) {
+              d3.select(this).classed("tract_clicked", true);
+              d3.select(this.parentNode).selectAll("g").attr("class","links_clicked");
+              tracts.selectAll(".tract_links").classed("hidden", true);
+              tract_clicked = d.properties.GEOID10;
+              tooltip_id_1.classed('hidden', false)
+                            .html("GEOID: " + d.properties.GEOID10);
+              tooltip_details_1.classed('hidden', false)
+                            .html("Total outgoing trips: " + d.total_trips);
+              second_tooltip = true;
+              geoid_filter = true;
+              updateBar();
+            }
+            else {
+              geoid_filter = false;
+              updateBar();
+              tracts.selectAll(".tract_links").classed("hidden", false);
+              tract_clicked = 0;
+              second_tooltip = false;
+              tooltip_id_2.classed('hidden', true);
+              tooltip_details_2.classed('hidden', true);
+            }
+          })
+          .on("mouseover", function(d) {
+                    if (second_tooltip) {
+                      tooltip_id_2.classed('hidden', false)
+                            .html("GEOID: " + d.properties.GEOID10);
+                      var outgoing_trips = trips_count.filter(function(a) {return a.key==tract_clicked})[0].values.filter(function(a) {return a.key==d.properties.GEOID10})[0];
+                      outgoing_trips ? outgoing_trips = outgoing_trips.value : outgoing_trips = 0;
+                      tooltip_details_2.classed('hidden', false)
+                            .html("Trips to this tract: " + outgoing_trips);
+                    }
+                    else {
+                      tooltip_id_1.classed('hidden', false)
+                            .html("GEOID: " + d.properties.GEOID10);
+                      tooltip_details_1.classed('hidden', false)
+                            .html("Total outgoing trips: " + d.total_trips);
+                    }
+          })
+          .on('mouseout', function() {
+                    if (second_tooltip) {
+                      tooltip_id_2.classed('hidden', true);
+                      tooltip_details_2.classed('hidden', true);
+                    }
+                    else {
+                      tooltip_id_1.classed('hidden', true);
+                      tooltip_details_1.classed('hidden', true);
+                    }
+          });
 
         var dataset = Array(24).fill(0);
 
@@ -365,7 +393,14 @@ $(document).ready(function(){
 
             data.forEach(function(d) {
               if ((mode.indexOf(+d.mode) != -1) & (purpose.indexOf(+d.d_purpose)!= -1)) {
-                   dataset[+d.time_start_hhmm] += +d.count
+                  if (geoid_filter) {
+                    if ((d.o_tract == tract_clicked)) {
+                      dataset[+d.time_start_hhmm] += +d.count
+                    }
+                  }
+                  else {
+                    dataset[+d.time_start_hhmm] += +d.count
+                  }  
               }
            });
 
@@ -377,7 +412,7 @@ $(document).ready(function(){
             .range([height, 0])
             .domain([0, d3.max(dataset)]);
 
-            var svg = d3.select("#barchart")
+            d3.select("#barchart")
               .transition();
 
            bar.selectAll("rect")
@@ -408,7 +443,7 @@ $(document).ready(function(){
             }
             updateBar();
             updateMap();
-          })
+          });
 
       d3.select('#purpose_filter')
         .selectAll('input').on("change", function() {
@@ -420,7 +455,54 @@ $(document).ready(function(){
           }
           updateBar();
           updateMap();
-        })
+        });
+
+      d3.select('#reset').on('click', function() {
+        mode = Array.apply(0, Array(5)).map(function (x, y) { return y + 1; });
+        purpose = Array.apply(0, Array(4)).map(function (x, y) { return y + 1; });
+        hour = Array.apply(0, Array(24)).map(function (x, y) { return y; });
+        geoid_filter = false;
+        second_tooltip = false;
+        tooltip_id_1.classed('hidden', true);
+        tooltip_details_1.classed('hidden', true);
+        tracts.selectAll(".tract_clicked").classed("tract_clicked", false);
+        tracts.selectAll(".links_clicked").attr("class","tract_links");
+        tracts.selectAll(".tract_links").classed("hidden", false);
+        d3.selectAll('.bar').classed("highlighted",false);
+        //make sure everything is checked when refresh
+        d3.selectAll('input').property('checked', true);
+        updateBar();
+        updateMap();
+      }); //end of reset on click function
+
+      map.on('resize', resize_graph);
+      function resize_graph() {
+        console.log("something?");
+        width = parseInt(d3.select('#barchart').style('width')) - margin.left - margin.right;
+        height = parseInt(d3.select('#barchart').style('height')) - margin.top - margin.bottom;
+
+        xScale.range([0, width]);
+
+        yScale.range([height, 0]);
+
+         svg_bar.attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom);
+
+         bar.attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom);
+
+         bar.selectAll(".bar")
+              .attr("x", function(d,i) { return xScale(i); })
+              .attr("width", xScale.bandwidth())
+              .attr("y", function(d) { return yScale(d); })
+              .attr("height", function(d) { return height - yScale(d); })
+
+         bar.select(".xaxis").attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(xScale));
+
+         bar.select(".yaxis").call(d3.axisLeft(yScale));
+
+      } // end of resize graph  function
 
     }); //end of load csv function
 

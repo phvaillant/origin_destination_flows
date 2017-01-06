@@ -8,6 +8,13 @@ html, body, #map_canvas, #right_panel, .container-fluid {
 	overflow-y: scroll;
 }
 
+#reset {
+  float: right;
+  z-index: 2;
+  position: relative;
+  margin: 10px;
+}
+
 #filter_pane {
 	height: 20%;
 	overflow-y: scroll;
